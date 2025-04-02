@@ -42,8 +42,8 @@ public class CadrePagesSuperScriptValidation {
     }
 
     @When("I navigate to {string}")
-    public void iNavigateTo(String url) {
-        driver.get(url);
+    public void iNavigateTo(String CurrentUrl) {
+        driver.get(CurrentUrl);
         pageTitle = driver.getTitle();
     }
 
