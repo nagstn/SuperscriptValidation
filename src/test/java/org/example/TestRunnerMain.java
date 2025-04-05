@@ -1,13 +1,14 @@
 package org.example;
-
-import org.junit.runner.RunWith;
 import io.cucumber.junit.Cucumber;
 import io.cucumber.junit.CucumberOptions;
+import org.junit.runner.RunWith;
 
 @RunWith(Cucumber.class)
 @CucumberOptions(
-        features = "C:/Users/nagar/ideaProjects/DataValidationRates/src/test/resources/features/SuperScriptValidation.feature", glue = "classpath:src/main/java/org/example/"
-
+        features = "src/test/resources/features/SuperscriptStepDefinitions.feature", // Path to your feature file
+        glue = "org.myPack"
+        //plugin = {"pretty", "html:target/cucumber-report.html"} // Optional: Report formatting
 )
 public class TestRunnerMain {
 }
+
