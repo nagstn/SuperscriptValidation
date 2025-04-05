@@ -1,17 +1,21 @@
+Feature: Verify Numeric Superscripts with Hyperlinks and Line Position
 
-Feature: Verify Numeric Superscripts with Hyperlinks
-  Scenario Outline: Verify superscript on web page and extract data
-  Given I have a Chrome browser for Superscript extraction
-  Given I navigate to the web page "<url>"
-  When I handle any initial modal dialogues
-  #Then I verify the presence of numeric superscripts with hyperlinks
-  #Then I extract the text and URL from the superscript elements
+  Scenario Outline: Verify Superscripts on Web Page
+    Given I have a Chrome browser for Superscript extraction
+    Given I navigate to the web page "<url>"
+    #Given Validate the total number of superscripts "<totalSuperscripts>"
+    When I handle any initial modal dialogues
     Then I extract superscript information and take screenshot
-  Then  I close the browser for Superscript extraction
-  Then I write results to an Excel file
-
+    Then I write results to an Excel file
+    Then I close the browser for Superscript extraction
 
     Examples:
-      | url                                          |
-      | https://www.wellsfargo.com/checking/prime/   |
-      | https://www.wellsfargo.com/savings-cds/way2save/ |
+      | url                                                            | totalSuperscripts
+      | https://www.wellsfargo.com/checking/prime/                     | 16
+      | https://www.wellsfargo.com/checking/premier/                   | 15
+      | https://www.wellsfargo.com/savings-cds/way2save/               | 5
+      | https://www.wellsfargo.com/savings-cds/platinum/               | 6
+      | https://www.wellsfargo.com/savings-cds/certificate-of-deposit/ | 6
+      | https://www.wellsfargo.com/savings-cds/rates/                  | 4
+      | https://www.wellsfargo.com/savings-cds/certificate-of-deposit/apply/          | 6
+      | https://www.wellsfargo.com/investing/retirement/ira/select/destination/rates/ | 3

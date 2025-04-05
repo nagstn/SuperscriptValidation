@@ -37,6 +37,12 @@
             <artifactId>ashot</artifactId>
             <version>1.5.4</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.bonigarcia</groupId>
+            <artifactId>webdrivermanager</artifactId>
+            <version>5.8.0</version> <!-- Check for the latest version -->
+            <scope>test</scope>
+        </dependency>
     <!-- https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml -->
     <dependency>
         <groupId>org.apache.poi</groupId>
@@ -73,7 +79,12 @@
             <artifactId>selenium-java</artifactId>
             <version>4.0.0-rc-2</version>
         </dependency>
-
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>compile</scope>
+        </dependency>
 
 
     </dependencies>

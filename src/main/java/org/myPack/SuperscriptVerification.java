@@ -1,6 +1,5 @@
-package org.example;
+package org.myPack;
 
-import com.google.common.base.Verify;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.io.FileHandler;
@@ -9,17 +8,14 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import ru.yandex.qatools.ashot.AShot;
 import ru.yandex.qatools.ashot.Screenshot;
 import ru.yandex.qatools.ashot.shooting.ShootingStrategies;
-import org.openqa.selenium.WebElement;
 
-import java.io.IOException;
 import javax.imageio.ImageIO;
-import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,7 +25,7 @@ public class SuperscriptVerification {
 
     public static void main ( String[] args ) throws IOException {
         // Set the path to your ChromeDriver executable
-        System.setProperty ( "webdriver.chrome.driver" , "C:\\Users\\nagar\\IdeaProjects\\chromedriver.exe" );
+        System.setProperty("webdriver.chrome.driver", "C:\\Users\\nagar\\IdeaProjects\\DataValidationRates\\src\\main\\resources\\chromedriver.exe"); // set correct path
 
         // Initialize WebDriver
         WebDriver driver = new ChromeDriver ( );
@@ -62,7 +58,7 @@ public class SuperscriptVerification {
                         .shootingStrategy ( ShootingStrategies.viewportPasting ( ShootingStrategies.scaling ( windowDPR ) , 1000 ) )
                         .takeScreenshot ( driver );
 
-                ImageIO.write ( (RenderedImage) screenshot.getImage ( ) , "png" , new File ( "./screenshots/AshotFullPageScreen.png" ) );
+                ImageIO.write ( screenshot.getImage ( ) , "png" , new File ( "./screenshots/AshotFullPageScreen.png" ) );
                 class SuperscriptScreenshot {
 
                     public static void main ( String[] args ) {
@@ -145,12 +141,13 @@ public class SuperscriptVerification {
             // Execute JavaScript to get the previous text node
             JavascriptExecutor js = (JavascriptExecutor) driver;
             Object precedingTextObj = js.executeScript (
-                    "var elem = arguments[0];\n" +
-                            "var prev = elem.previousSibling;\n" +
-                            "while (prev && prev.nodeType != 3) {\n" +
-                            "  prev = prev.previousSibling;\n" +
-                            "}\n" +
-                            "return prev ? prev.textContent : '';" , element );
+                    """
+                            var elem = arguments[0];
+                            var prev = elem.previousSibling;
+                            while (prev && prev.nodeType != 3) {
+                              prev = prev.previousSibling;
+                            }
+                            return prev ? prev.textContent : '';""" , element );
 
             // Return the text or an empty string if no preceding text node is found
             return (precedingTextObj != null) ? precedingTextObj.toString ( ).trim ( ) : "";
