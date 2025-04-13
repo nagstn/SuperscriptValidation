@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superscript Position Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6; /* Add some line height for clarity */
+        }
+        p {
+           border: 1px dashed #eee; /* Optional: Visual aid to see paragraph bounds */
+           padding: 5px;
+           margin-bottom: 15px;
+           font-size: 18px; /* Make text slightly larger */
+        }
+
+        /* CSS to force a superscript element onto the same baseline */
+        .same-line-sup {
+            vertical-align: baseline; /* The key: aligns with the parent's baseline */
+            font-size: 0.8em;         /* Optional: Make it look slightly like a superscript */
+            /* The default browser style for <sup> usually includes vertical-align: super; */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Superscript Verification Test Page</h1>
+
+    <!-- Case 1: Standard Superscript (Should be detected as ABOVE) -->
+    <p>
+						
+	Optional Overdraft Protection<sup class="c20ref" data-footnote="tcm:84-291187-16" type="footnote"><a href="#tcm:84-291187-16" id="ps-dynamic-footnote-link1"><span class="hidden" data-translation-text="footnote-dialog-announcement">Opens a modal dialog for footnote </span>2</a></sup> for your checking account
+					</p>
+
+    <!-- Case 2: Superscript Styled to be on the Same Line (Should be detected as SAME LINE) -->
+    <p>
+						
+	Optional Overdraft Protection<sup class="c20ref" data-footnote="tcm:84-291187-16" type="footnote"><a href="#tcm:84-291187-16" id="ps-dynamic-footnote-link1"><span class="hidden" data-translation-text="footnote-dialog-announcement">Opens a modal dialog for footnote </span></a></sup> for your checking account
+					</p
+
+    <!-- Case 3: Empty Superscript Tag (Should trigger 'content missing' message) -->
+     <p>
+						
+	Optional Overdraft Protection<sup class="c20ref" data-footnote="tcm:84-291187-16" type="footnote"><a href="#tcm:84-291187-16" id="ps-dynamic-footnote-link1"><span class="hidden" data-translation-text="footnote-dialog-announcement">Opens a modal dialog for footnote </span>2</a></sup> for your checking account
+					</p
+
+    <!-- Case 4: Text without superscript for reference -->
+    <p>
+						
+	Optional Overdraft Protection<sup class="c20ref" data-footnote="tcm:84-291187-16" type="footnote"><a href="#tcm:84-291187-16" id="ps-dynamic-footnote-link1"><span class="hidden" data-translation-text="footnote-dialog-announcement">Opens a modal dialog for footnote </span>2</a></sup> for your checking account
+					</p
+
+</body>
+</html>
