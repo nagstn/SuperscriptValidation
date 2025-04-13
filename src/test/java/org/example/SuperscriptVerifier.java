@@ -3,52 +3,55 @@ package org.example;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import java.time.Duration;
+import java.util.ArrayList; // Import ArrayList
+import java.util.List;
 
 public class SuperscriptVerifier {
 
     public static void main(String[] args) {
-        // --- Configuration ---
-        WebDriver driver;
-        System.setProperty("webdriver.chrome.driver", "C:\\Users\\nagar\\IdeaProjects\\DataValidationRates\\src\\main\\resources\\chromedriver.exe"); // set correct path
-        driver = new ChromeDriver();
-        String testUrl = "file:///C:/Users/nagar/OneDrive/Desktop/superscript_test.html"; // Replace with the URL of your test page
-        // --- End Configuration ---
+        WebDriver driver = null; // Initialize outside try
 
-        driver = null;
         try {
-            driver = new ChromeDriver();
+            // --- Configuration ---
+            System.setProperty("webdriver.chrome.driver", "C:\\Users\\nagar\\IdeaProjects\\DataValidationRates\\src\\main\\resources\\chromedriver.exe");
+            driver = new ChromeDriver(); // Initialize driver here
+            String testUrl = "file:///C:/Users/nagar/OneDrive/Desktop/superscript_test.html";
+            // --- End Configuration ---
+
             driver.manage().window().maximize();
-            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5)); // Implicit wait
+            driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
 
             driver.get(testUrl);
 
-            // --- LOCATOR STRATEGY ---
-            // **IMPORTANT:** You MUST provide a specific locator for the superscript
-            // element you want to test. Choose ONE of the following examples
-            // or create your own based on the HTML structure.
-
-            // Example 1: Find a specific superscript by its ID
-            // By superscriptLocator = By.id("mySuperscriptId");
-
-            // Example 2: Find a superscript within a specific paragraph containing known text
-            By superscriptLocator = By.xpath("//*[@id='line3']/sup" ); // Adjust 'Some preceding text'
-//*[@id="line1"]/sup
-            // Example 3: Find the first superscript on the page (less reliable if multiple exist)
-            // By superscriptLocator = By.tagName("sup");
-//*[@id="openAcct"]/div[2]/label/strong[3]/text()[1]
-            // Example 4: Find a superscript immediately following a specific span
-            // By superscriptLocator = By.xpath("//span[@id='specificTextSpan']/following-sibling::sup[1]");
+            // --- CORRECTED LOCATOR STRATEGY ---
+            // Find ALL superscript elements with the specific class you want to test
+            // This locator finds <sup> tags with class 'c20ref' anywhere on the page
+            By superscriptLocator = new By.ByTagName ("sup");
+            List<WebElement> superscriptElements = driver.findElements(superscriptLocator);
             // --- END LOCATOR STRATEGY ---
 
+            System.out.println("Found " + superscriptElements.size() + " superscript elements with locator: " + superscriptLocator);
 
-            String verificationMessage = verifySuperscriptPosition(driver, superscriptLocator);
-            System.out.println("Verification Result: " + verificationMessage);
+            if (superscriptElements.isEmpty()) {
+                System.out.println("No superscript elements found to verify.");
+            } else {
+                // --- CORRECTED ITERATION ---
+                // Create a list to store results if needed, or just print directly
+                List<String> verificationResults = new ArrayList<>();
+                System.out.println("\n--- Verification Results ---");
 
+                // Loop through each found superscript element
+                for (WebElement supElement : superscriptElements) {
+                    // Call verifySuperscriptPosition for EACH element
+                    String resultMessage = verifySingleSuperscriptPosition(supElement, driver);
+                    System.out.println(resultMessage); // Print result for each element
+                    verificationResults.add(resultMessage); // Optionally store results
+                }
+                System.out.println("--- End of Verification ---");
+            }
 
-        } catch (NoSuchElementException nsee) {
-            System.err.println("Error: Could not find the specified superscript element using the provided locator.");
-        } catch (Exception e) {
-            System.err.println("An error occurred: " + e.getMessage());
+        } catch (Exception e) { // Catch broader exceptions
+            System.err.println("An error occurred during execution: " + e.getMessage());
             e.printStackTrace();
         } finally {
             if (driver != null) {
@@ -58,71 +61,113 @@ public class SuperscriptVerifier {
     }
 
     /**
-     * Verifies the position and content of a superscript element.
+     * Verifies the position and content of a SINGLE superscript element.
      *
-     * @param driver             The WebDriver instance.
-     * @param superscriptLocator The By locator strategy to find the specific superscript element.
-     * @return A message indicating the verification status.
+     * @param superscriptElement The WebElement representing the <sup> tag.
+     * @param driver             The WebDriver instance (needed for context/JS execution if added later).
+     * @return A message indicating the verification status for this element.
      */
-    public static String verifySuperscriptPosition(WebDriver driver, By superscriptLocator) {
+    public static String verifySingleSuperscriptPosition(WebElement superscriptElement, WebDriver driver) {
+        String identifier = getElementIdentifierForLog(superscriptElement); // Get ID or text for logging
         try {
-            WebElement supElement = driver.findElement(superscriptLocator);
-            String supText = supElement.getText().trim();
+            String superscriptText = superscriptElement.getText().trim();
 
-            // 1. Check if the superscript tag exists but the number/content is missing
-            if (supText.isEmpty()) {
-                return "Superscript tag found, but superscript content (number/text) is missing.";
+            // 1. Check for empty tag (contains tag but no value)
+            // Note: We already found the element, so the tag exists. Check if text is empty.
+            if (superscriptText.isEmpty()) {
+                // Find preceding text to give context to the empty tag
+                String preceding = getPrecedingTextUsingSeleniumOnly(superscriptElement, driver); // Use helper
+                return "INFO: Superscript element " + identifier + " found, but content (text/value) is missing. Preceding: '" + preceding + "'";
             }
 
-            // 2. Find the immediate parent element for position comparison
-            // Using XPath "./.." is a common way to get the parent
+            // --- Numeric Check (Optional but good based on previous examples) ---
+            // Pattern numericPattern = Pattern.compile("^\\d+$");
+            // if (!numericPattern.matcher(superscriptText).matches()) {
+            //     return "INFO: Superscript " + identifier + " has non-numeric text: '" + superscriptText + "'. Skipping position check.";
+            // }
+            // --- End Numeric Check ---
+
+
+            // 2. Find Parent Element
             WebElement parentElement;
             try {
-                parentElement = supElement.findElement(By.xpath("./.."));
-                if (parentElement.getTagName().equalsIgnoreCase("body") || parentElement.getTagName().equalsIgnoreCase("html")) {
-                    System.out.println("Warning: Parent element is high up the DOM ('" + parentElement.getTagName() + "'). Positional check might be less meaningful.");
-                    // Optionally, you could try finding a preceding sibling text node or element if needed,
-                    // but comparing with the immediate parent is often sufficient.
-                }
+                parentElement = superscriptElement.findElement(By.xpath(".//.."));
             } catch (NoSuchElementException e) {
-                return "Superscript found, but could not determine its parent element for position check.";
+                return "ERROR: Superscript " + identifier + " found, but could not determine its parent element.";
             }
 
-
-            // 3. Get position and size information
-            Point supLocation = supElement.getLocation();
-            Dimension supSize = supElement.getSize();
+            // 3. Get Position Info
+            Point supLocation = superscriptElement.getLocation();
+            Dimension supSize = superscriptElement.getSize();
             Point parentLocation = parentElement.getLocation();
-            // Dimension parentSize = parentElement.getSize(); // Parent size might not be needed directly
+
+            // Basic check if element is actually displayed and has size
+            if (!superscriptElement.isDisplayed() || supSize.getHeight() == 0 || supSize.getWidth() == 0) {
+                return "INFO: Superscript " + identifier + " found in DOM but is not displayed or has zero size. Skipping position check.";
+            }
+
 
             int supY = supLocation.getY();
-            int supBottomY = supY + supSize.getHeight();
             int parentY = parentLocation.getY();
 
-            // Debugging output (optional)
-            System.out.println("Superscript Text: '" + supText + "'");
-            System.out.println("Superscript Y: " + supY + ", Height: " + supSize.getHeight() + ", Bottom Y: " + supBottomY);
-            System.out.println("Parent Tag: <" + parentElement.getTagName() + ">, Parent Y: " + parentY);
+            // Debugging output
+            // System.out.println("  Checking: " + identifier + " | Text: '" + superscriptText + "' | SupY: " + supY + " | ParentY: " + parentY + " | ParentTag: " + parentElement.getTagName());
 
-            // 4. Determine position
-            // Condition for "Above": The superscript's top Y-coordinate should be less than
-            // the parent's top Y-coordinate. Rendering engines place `<sup>` higher.
-            // Allow for a small tolerance if needed, but often `supY < parentY` is enough.
-            if (supY < parentY) {
-                // This is the expected rendering for a superscript visually above the baseline
-                return "SUCCESS: Superscript '" + supText + "' is displayed visually above the baseline of the parent text.";
+            // 4. Determine Position (Compare Y coordinates)
+            // Allow a small tolerance (e.g., 1-2 pixels) for rendering variations
+            if (supY < (parentY - 3)) { // If superscript top is clearly above parent top
+                return "PASS: Superscript " + identifier + " ('" + superscriptText + "') is displayed visually ABOVE the baseline.";
             } else {
-                // Condition for "Same Line": If the superscript's top Y is not less than
-                // the parent's top Y, it's effectively rendered on the same line or lower.
-                return "ISSUE: Superscript '" + supText + "' is displayed on the same line as the preceding/parent text (Y=" + supY + ", ParentY=" + parentY + ").";
-                // We can add more checks here if needed, e.g., compare supBottomY with parentBottomY
-                // but supY >= parentY usually indicates it's not positioned *above*.
+                // Consider it on the same line if its top is not clearly above the parent's top
+                return "FAIL: Superscript " + identifier + " ('" + superscriptText + "') is displayed on the SAME LINE as parent baseline (SupY=" + supY + ", ParentY=" + parentY + ").";
             }
 
-        } catch (NoSuchElementException e) {
-            // This catch is technically redundant if the main method catches it,
-            // but good practice within the helper function too.
-            return "Superscript element not found using locator: " + superscriptLocator;
+        } catch (StaleElementReferenceException se) {
+            // Handle cases where the element becomes stale during processing
+            System.err.println("StaleElementReferenceException for " + identifier + ". Element might have been removed or changed.");
+            return "ERROR: Stale element reference for " + identifier + ". Cannot verify.";
+        } catch (Exception e) {
+            // Catch other unexpected errors for this specific element
+            System.err.println("Unexpected error verifying " + identifier + ": " + e.getMessage());
+            // e.printStackTrace(); // Uncomment for full trace if needed
+            return "ERROR: Exception verifying " + identifier + ": " + e.getMessage().split("\n")[0];
         }
     }
+
+    /**
+     * Helper to get a useful identifier (ID or first part of text) for logging.
+     */
+    private static String getElementIdentifierForLog(WebElement element) {
+        try {
+            String id = element.getAttribute("id");
+            if (id != null && !id.isEmpty()) {
+                return "[ID:" + id + "]";
+            }
+            String text = element.getText();
+            if (text != null && !text.isEmpty()) {
+                return "[Text:" + text.substring(0, Math.min(text.length(), 10)) + "...]";
+            }
+            return "[Tag:" + element.getTagName() + "]"; // Fallback
+        } catch (Exception e) {
+            return "[UnknownElement]";
+        }
+    }
+
+    /**
+     * Limited Selenium-only preceding text finder (See previous explanation for limitations).
+     * It's highly recommended to use the JavaScriptExecutor version for accuracy.
+     */
+    private static String getPrecedingTextUsingSeleniumOnly(WebElement element, WebDriver driver) {
+        if (element == null) return "[Null Element]";
+        try {
+            WebElement precedingSiblingElement = element.findElement(By.xpath("./preceding-sibling::*[1]"));
+            String text = precedingSiblingElement.getText();
+            return (text != null) ? text.trim() : "";
+        } catch (NoSuchElementException e) {
+            return "[No Preceding Sibling Element]";
+        } catch (Exception e) {
+            return "[Error Getting Preceding]";
+        }
+    }
+
 }
