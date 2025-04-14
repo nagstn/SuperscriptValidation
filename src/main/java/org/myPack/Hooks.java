@@ -1,12 +1,22 @@
+// --- In Hooks.java ---
 package org.myPack; // Or your hooks package
 
 import io.cucumber.java.AfterAll;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet; // Add import
-import java.io.File; // Add import
+import org.apache.poi.ss.usermodel.*;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Map;
+
+// Import the specific inner/nested classes if they are defined that way,
+// otherwise import the top-level classes
+// Assuming they are defined in SuperscriptStepDefinitions for this example:
+import static org.myPack.SuperscriptStepDefinitions.SuperscriptInfo;
+import static org.myPack.SuperscriptStepDefinitions.VerificationSummary;
+// OR if they are top-level classes:
+// import org.myPack.SuperscriptInfo;
+// import org.myPack.VerificationSummary;
+
 
 public class Hooks {
 
@@ -14,70 +24,64 @@ public class Hooks {
     public static void afterAllScenarios() {
         System.out.println("--- Running @AfterAll Hook ---");
 
-        // Access the static workbook and timestamp
+        // Access the STATIC workbook and timestamp from the Step Definition class
         if (SuperscriptStepDefinitions.workbook != null && SuperscriptStepDefinitions.timestamp != null) {
             String excelFilename = "superscript_validation_" + SuperscriptStepDefinitions.timestamp + ".xlsx";
             System.out.println("Attempting to write final Excel file: " + excelFilename);
 
             try {
-                // --- Get References to Sheets ---
                 Sheet detailSheet = SuperscriptStepDefinitions.workbook.getSheet("SuperscriptDetail");
                 Sheet summarySheet = SuperscriptStepDefinitions.workbook.getSheet("ValidationSummary");
 
-                if (detailSheet == null) {
-                    System.err.println("ERROR: Detail sheet is null in @AfterAll!");
-                } else {
-                    // --- Populate Detail Sheet from static list ---
+                // --- Populate Detail Sheet ---
+                if (detailSheet != null) {
                     System.out.println("Populating Detail Sheet... Found " + SuperscriptStepDefinitions.allSuperscriptDetails.size() + " detail records.");
-                    int detailDataRowIndex = 1; // Start after header
-                    for (SuperscriptStepDefinitions.SuperscriptInfo info : SuperscriptStepDefinitions.allSuperscriptDetails) {
-                        Row dataRow = detailSheet.createRow(detailDataRowIndex++); // Use local counter for writing
+                    int detailDataRowIndex = 1;
+                    for (SuperscriptInfo info : SuperscriptStepDefinitions.allSuperscriptDetails) {
+                        Row dataRow = detailSheet.createRow(detailDataRowIndex++);
+                        // ... (Populate detail row cells) ...
                         int cellNum = 0;
-                        dataRow.createCell(cellNum++).setCellValue(info.tabIdentifier);
-                        dataRow.createCell(cellNum++).setCellValue(info.superscriptText);
-                        dataRow.createCell(cellNum++).setCellValue(info.precedingText);
-                        dataRow.createCell(cellNum++).setCellValue(info.isHyperlink ? "YES" : "NO");
-                        dataRow.createCell(cellNum++).setCellValue(info.linkHref);
-                        dataRow.createCell(cellNum++).setCellValue(info.positionStatus != null ? info.positionStatus.name() : "N/A"); // Null check
-                        dataRow.createCell(cellNum++).setCellValue(info.verificationMessage != null ? info.verificationMessage : "N/A"); // Null check
+                        dataRow.createCell(cellNum++).setCellValue(info.tabIdentifier != null ? info.tabIdentifier : "N/A");
+                        // ... other cells ...
                     }
+                    // ... (Auto-size columns) ...
                     System.out.println("Detail Sheet populated.");
-                }
+                } else { System.err.println("ERROR: Detail sheet is null!"); }
 
-                if (summarySheet == null) {
-                    System.err.println("ERROR: Summary sheet is null in @AfterAll!");
-                } else {
-                    // --- Populate Summary Sheet from static map ---
-                    System.out.println("Populating Summary Sheet... Found " + SuperscriptStepDefinitions.tabSummaries.size() + " tab summaries.");
+
+                // --- Populate Summary Sheet ---
+                if (summarySheet != null) {
+                    System.out.println("Populating Summary Sheet... Found " + SuperscriptStepDefinitions.tabSummaries.size() + " summary entries.");
                     int summaryDataRowIndex = 1; // Start after header
-                    for (Map.Entry<String, SuperscriptStepDefinitions.VerificationSummary> entry : SuperscriptStepDefinitions.tabSummaries.entrySet()) {
-                        Row summaryDataRow = summarySheet.createRow(summaryDataRowIndex++); // Use local counter for writing
-                        SuperscriptStepDefinitions.VerificationSummary summary = entry.getValue();
+                    // Iterate the map which now contains ONE entry per page/tab processing run
+                    for (Map.Entry<String, VerificationSummary> entry : SuperscriptStepDefinitions.tabSummaries.entrySet()) {
+                        Row summaryDataRow = summarySheet.createRow(summaryDataRowIndex++);
+                        VerificationSummary summary = entry.getValue();
                         int cellNum = 0;
-                        summaryDataRow.createCell(cellNum++).setCellValue(entry.getKey()); // Tab Identifier
-                        summaryDataRow.createCell(cellNum++).setCellValue(summary.totalSuperscriptsFoundInPanel);
-                        summaryDataRow.createCell(cellNum++).setCellValue(summary.numericSuperscriptsProcessed);
-                        summaryDataRow.createCell(cellNum++).setCellValue(summary.positionCheckPassed);
-                        summaryDataRow.createCell(cellNum++).setCellValue(summary.positionCheckFailed);
-                        summaryDataRow.createCell(cellNum++).setCellValue(summary.positionCheckErrors);
-                        summaryDataRow.createCell(cellNum++).setCellValue(summary.hyperlinkCount);
-                        summaryDataRow.createCell(cellNum++).setCellValue(summary.noHyperlinkCount);
-                        // Add more summary columns if needed (e.g., empty count, non-numeric count)
+                        summaryDataRow.createCell(cellNum++).setCellValue(entry.getKey()); // Page/Tab Run Identifier
+                        // ... (Populate counts: totalFound, numericProcessed, posPassed, etc., from summary object) ...
+                        // Write validation columns
+                        Cell expectedCell = summaryDataRow.createCell(cellNum++);
+                        if (summary.expectedNumericTotal == -1) expectedCell.setCellValue("N/A");
+                        else expectedCell.setCellValue(summary.expectedNumericTotal);
+                        summaryDataRow.createCell(cellNum++).setCellValue(summary.finalResult); // Write PASS/FAIL/SKIPPED
                     }
+                    // ... (Auto-size columns) ...
                     System.out.println("Summary Sheet populated.");
-                }
+                } else { System.err.println("ERROR: Summary sheet is null!"); }
+
 
                 // --- Write to File ---
                 try (FileOutputStream outputStream = new FileOutputStream(excelFilename)) {
                     SuperscriptStepDefinitions.workbook.write(outputStream);
                     System.out.println("----> Final Excel data successfully written to: " + new File(excelFilename).getAbsolutePath());
+                } catch (IOException e) { // Catch specific IO exception for writing
+                    System.err.println("ERROR writing final Excel file in @AfterAll: " + e.getMessage());
+                    e.printStackTrace();
                 }
 
-            } catch (IOException e) {
-                System.err.println("ERROR writing final Excel file in @AfterAll: " + e.getMessage());
-                e.printStackTrace();
-            } catch (Exception e) {
-                System.err.println("UNEXPECTED error during final Excel processing/writing in @AfterAll: " + e.getMessage());
+            } catch (Exception e) { // Catch broader exceptions during sheet population
+                System.err.println("UNEXPECTED error during final Excel processing in @AfterAll: " + e.getMessage());
                 e.printStackTrace();
             } finally {
                 // Close the workbook resource
@@ -93,5 +97,6 @@ public class Hooks {
         } else {
             System.err.println("@AfterAll: Workbook or Timestamp was null. Cannot write Excel file.");
         }
+        System.out.println("--- Finished @AfterAll Hook ---");
     }
 }

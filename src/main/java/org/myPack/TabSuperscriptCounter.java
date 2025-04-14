@@ -7,7 +7,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.*;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.devtools.v128.filesystem.model.File;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -42,10 +41,12 @@ public class TabSuperscriptCounter {
 
         // Enum for position status
         enum PositionStatus {
-            ABOVE_BASELINE, // Pass condition
-            SAME_LINE,      // Fail condition
-            CHECK_ERROR,    // Error during check
-            NOT_APPLICABLE // e.g., if element was stale before check
+            ABOVE_BASELINE,      // Standard superscript, displayed above (PASS condition for position)
+            SAME_LINE,           // Styled or rendered on the same baseline (FAIL condition for position)
+            EMPTY_TAG,           // Tag exists but has no text content (INFO)
+            POSITION_CHECK_ERROR,// Error occurred during the position check
+            NOT_APPLICABLE,      // E.g., Element was stale before check
+            CHECK_ERROR, ELEMENT_ERROR        // Error finding/accessing the element initially
         }
 
         // Constructor or setters can be added as needed
@@ -105,13 +106,14 @@ public class TabSuperscriptCounter {
 
             // --- CONFIGURATION Based on Wells Fargo HTML ---
               //String url = "https://www.wellsfargo.com/savings-cds/";
-           //String url="file:///C:/Users/nagar/OneDrive/Desktop/superscript_react_test.html";
-            String url="file:///C:/Users/nagar/OneDrive/Desktop/superscript_test2.html";
+           String url="file:///C:/Users/nagar/OneDrive/Desktop/superscript_react_test.html";
+           // String url="https://www.wellsfargo.com/savings-cds/";
             By tabContainerLocator = By.xpath ( "//div[@role='tablist' and contains(@class, 'table-tab-list')]" );
             By tabLocator = By.xpath ( ".//button[@role='tab']" );
             String activePanelIndicatorAttribute = "aria-selected";
             String activePanelIndicatorValue = "true";
-            By superscriptLocator = By.xpath ( ".//sup[@class='c20ref']" );
+            By superscriptLocator = By.tagName ( "sup" );//sup[@class='c20ref']"" );
+
             // --- END CONFIGURATION ---
 
             driver.get ( url );
@@ -487,9 +489,9 @@ public class TabSuperscriptCounter {
      * @param driver     The WebDriver instance.
      * @return PositionStatus indicating if it's above or on the same line (baseline).
      */
-       private static SuperscriptInfo.PositionStatus checkSuperscriptPosition(WebElement supElement, WebDriver driver) {
-        if (supElement == null) return SuperscriptInfo.PositionStatus.CHECK_ERROR;
-        try {
+       static SuperscriptInfo.PositionStatus checkSuperscriptPosition ( WebElement supElement , WebDriver driver ) {
+           if ( supElement == null ) return SuperscriptInfo.PositionStatus.CHECK_ERROR;
+           try {
            /* JavascriptExecutor js = (JavascriptExecutor) driver;
             Object result = js.executeScript(
                     "var elem = arguments[0]; if (!elem) return 'CHECK_ERROR: Element is null';" +
@@ -497,30 +499,42 @@ public class TabSuperscriptCounter {
                             "catch (e) { return 'CHECK_ERROR: JS Error - ' + e.message; }", supElement);
 
 */
-            JavascriptExecutor js = (JavascriptExecutor) driver;
-            Object result = js.executeScript (
-                    "var elem = arguments[0];" + // arguments[0] now correctly refers to supElement
-                            "if (!elem) return 'ERROR: Element not received by JS';" +
-                            "try { return window.getComputedStyle(elem).getPropertyValue('vertical-align'); }" +
-                            "catch(e) { return 'ERROR: JS Exception - ' + e.message; }" ,
-                    supElement // <-- Pass the WebElement here
-            );
-            if (result instanceof String) {
-                String verticalAlign = (String) result;
-                if ("super".equalsIgnoreCase(verticalAlign)) {
-                    return SuperscriptInfo.PositionStatus.ABOVE_BASELINE;
-                } else if ("baseline".equalsIgnoreCase(verticalAlign) || "middle".equalsIgnoreCase(verticalAlign) || "sub".equalsIgnoreCase(verticalAlign) || "text-bottom".equalsIgnoreCase(verticalAlign) || "text-top".equalsIgnoreCase(verticalAlign) || "top".equalsIgnoreCase(verticalAlign) || "bottom".equalsIgnoreCase(verticalAlign) ) {
-                    return SuperscriptInfo.PositionStatus.SAME_LINE;
-                } else {
-                    return SuperscriptInfo.PositionStatus.CHECK_ERROR; // Unrecognized value
-                }
-            } else {
-                return SuperscriptInfo.PositionStatus.CHECK_ERROR; // Unexpected type
-            }
-        } catch (Exception e) {
-            return SuperscriptInfo.PositionStatus.CHECK_ERROR; // Error during check
-        }
-    }
+               Point supLocation = supElement.getLocation ( );
+               Dimension supSize = supElement.getSize ( );
+               Point parentLocation = supElement.getLocation ( );
+               // Dimension parentSize = parentElement.getSize(); // Parent size might not be needed directly
+
+               int supY = supLocation.getY ( );
+               int supBottomY = supY + supSize.getHeight ( );
+               int parentY = parentLocation.getY ( );
+
+               // Debugging output (optional)
+               System.out.println ( "Superscript Text: '" + supElement + "'" );
+               System.out.println ( "Superscript Y: " + supY + ", Height: " + supSize.getHeight ( ) + ", Bottom Y: " + supBottomY );
+               System.out.println ( "Parent Tag: <" + supElement.getTagName ( ) + ">, Parent Y: " + parentY );
+
+               // 4. Determine position
+               // Condition for "Above": The superscript's top Y-coordinate should be less than
+               // the parent's top Y-coordinate. Rendering engines place `<sup>` higher.
+               // Allow for a small tolerance if needed, but often `supY < parentY` is enough.
+               if ( supY < parentY - 3 ) {
+                   // This is the expected rendering for a superscript visually above the baseline
+                   return SuperscriptInfo.PositionStatus.ABOVE_BASELINE;
+               } else {
+                   // Condition for "Same Line": If the superscript's top Y is not less than
+                   // the parent's top Y, it's effectively rendered on the same line or lower.
+                   return SuperscriptInfo.PositionStatus.SAME_LINE;
+                   //return "ISSUE: Superscript '" + supElement + "' is displayed on the same line as the preceding/parent text (Y=" + supY + ", ParentY=" + parentY + ").";
+                   // We can add more checks here if needed, e.g., compare supBottomY with parentBottomY
+                   // but supY >= parentY usually indicates it's not positioned *above*.
+               }
+           } catch (NoSuchElementException e) {
+               // This catch is technically redundant if the main method catches it,
+               // but good practice within the helper function too.
+               return SuperscriptInfo.PositionStatus.CHECK_ERROR;
+               //return ("Superscript element not found using locator: " + supElement);
+           }
+       }
     /**
      * Generates a human-readable message based on the position check status.
      */
