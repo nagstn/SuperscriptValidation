@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React Superscript Test Page</title>
+  <!-- Load React library -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <!-- Load Babel Compiler -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1, h2 {
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+    }
+    p {
+      margin-bottom: 15px;
+      border: 1px dashed #eee; /* Visual aid */
+      padding: 8px;
+    }
+    /* --- Tab Styling --- */
+    .tab-list {
+      border-bottom: 1px solid #ccc;
+      padding-left: 0;
+      margin-bottom: 15px;
+    }
+    .tab-button {
+      display: inline-block;
+      padding: 10px 15px;
+      margin-right: 5px;
+      margin-bottom: -1px; /* Overlap border */
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-bottom: none;
+      background-color: #f1f1f1;
+      border-radius: 4px 4px 0 0;
+    }
+    .tab-button[aria-selected="true"] {
+      background-color: #fff;
+      border-color: #ccc #ccc #fff; /* Active tab look */
+      font-weight: bold;
+    }
+    .tab-panel {
+      padding: 15px;
+      border: 1px solid #ccc;
+      border-top: none;
+      /* Hide inactive panels */
+      /* display: none; */ /* Use hidden attribute instead for easier Selenium interaction */
+    }
+    /* --- Superscript Styling --- */
+    .c20ref {
+      /* Basic style for easy targeting */
+      font-weight: bold;
+      color: blue;
+    }
+    .same-line-sup {
+      vertical-align: baseline; /* Override browser default */
+      font-size: 0.85em; /* Make it slightly smaller */
+      /* Keep the c20ref class for Selenium locator */
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Superscript Test Cases with Tabs</h1>
+
+<div id="root"></div>
+
+<script type="text/babel"> // Use text/babel for JSX transpilation
+
+const { useState } = React;
+
+function App() {
+  // State to manage the active tab
+  const [activeTab, setActiveTab] = useState('panel-one'); // Default to first tab
+
+  const handleTabClick = (panelId) => {
+    setActiveTab(panelId);
+  };
+
+  return (
+          <div>
+            {/* --- Standalone Test Cases --- */}
+            <h2>Standalone Examples</h2>
+            <p id="standard-above">
+              This paragraph has a standard numeric superscript that should appear visually **above** the baseline text<sup className="c20ref" id="sup-standard">1</sup>. More text follows.
+            </p>
+            <p id="same-line">
+              This paragraph has a numeric superscript styled using CSS to appear on the **same baseline** as the parent text<sup className="c20ref same-line-sup" id="sup-same-line">2</sup>. More text follows.
+            </p>
+            <p id="empty-tag">
+              This paragraph has an empty superscript tag here<sup className="c20ref" id="sup-empty"></sup>. The tag exists but contains no value.
+            </p>
+            <p id="no-link">
+              This numeric superscript has no hyperlink around it<sup className="c20ref" id="sup-no-link">3</sup>.
+            </p>
+            <p id="with-link">
+              This numeric superscript <a href="https://example.com/link4" target="_blank"><sup className="c20ref" id="sup-with-link">4</sup></a> is wrapped in a hyperlink.
+            </p>
+            <p id="non-numeric">
+              This is a non-numeric superscript<sup className="c20ref" id="sup-non-numeric">*</sup> that should be ignored by the numeric filter.
+            </p>
+
+            {/* --- Tab Structure --- */}
+            <h2>Tabbed Examples</h2>
+            <div role="tablist" className="table-tab-list">
+              {/* Tab Buttons */}
+              <button
+                      role="tab"
+                      id="tab-one"
+                      aria-controls="panel-one"
+                      aria-selected={activeTab === 'panel-one'}
+                      onClick={() => handleTabClick('panel-one')}
+                      className="tab-button"
+              >
+                Tab One (Standard/Empty)
+              </button>
+              <button
+                      role="tab"
+                      id="tab-two"
+                      aria-controls="panel-two"
+                      aria-selected={activeTab === 'panel-two'}
+                      onClick={() => handleTabClick('panel-two')}
+                      className="tab-button"
+              >
+                Tab Two (Same Line/Link)
+              </button>
+            </div>
+
+            {/* Tab Panels */}
+            {/* Panel One */}
+            <div
+                    role="tabpanel"
+                    id="panel-one"
+                    aria-labelledby="tab-one"
+                    className="tab-panel"
+                    hidden={activeTab !== 'panel-one'} // Use hidden attribute
+            >
+              <h3>Content for Tab One</h3>
+              <p>
+                Inside Tab One, here's another standard superscript<sup className="c20ref" id="sup-tab1-std">5</sup>.
+              </p>
+              <p>
+                And here is an empty tag within Tab One<sup className="c20ref" id="sup-tab1-empty"></sup>.
+              </p>
+              <p>
+                Another standard numeric one<sup className="c20ref" id="sup-tab1-std2">6</sup> without a link.
+              </p>
+            </div>
+
+            {/* Panel Two */}
+            <div
+                    role="tabpanel"
+                    id="panel-two"
+                    aria-labelledby="tab-two"
+                    className="tab-panel"
+                    hidden={activeTab !== 'panel-two'} // Use hidden attribute
+            >
+              <h3>Content for Tab Two</h3>
+              <p>
+                Inside Tab Two, this one is styled for the same baseline<sup className="c20ref same-line-sup" id="sup-tab2-same">7</sup>.
+              </p>
+              <p>
+                And this one has a link: <a href="https://example.com/link8"><sup className="c20ref" id="sup-tab2-link">8</sup></a>.
+              </p>
+              <p>
+                One more same-line superscript<sup className="c20ref same-line-sup" id="sup-tab2-same2">9</sup>.
+              </p>
+            </div>
+
+          </div>
+  );
+}
+
+// Render the App component to the root element
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(<App />);
+
+</script>
+
+</body>
+</html>
