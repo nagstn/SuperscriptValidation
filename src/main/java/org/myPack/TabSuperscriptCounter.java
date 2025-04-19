@@ -106,8 +106,8 @@ public class TabSuperscriptCounter {
 
             // --- CONFIGURATION Based on Wells Fargo HTML ---
               //String url = "https://www.wellsfargo.com/savings-cds/";
-           String url="file:///C:/Users/nagar/OneDrive/Desktop/superscript_react_test.html";
-           // String url="https://www.wellsfargo.com/savings-cds/";
+           //String url="file:///C:/Users/nagar/OneDrive/Desktop/superscript_react_test.html";
+           String url="https://www.wellsfargo.com/savings-cds/";
             By tabContainerLocator = By.xpath ( "//div[@role='tablist' and contains(@class, 'table-tab-list')]" );
             By tabLocator = By.xpath ( ".//button[@role='tab']" );
             String activePanelIndicatorAttribute = "aria-selected";
@@ -517,7 +517,7 @@ public class TabSuperscriptCounter {
                // Condition for "Above": The superscript's top Y-coordinate should be less than
                // the parent's top Y-coordinate. Rendering engines place `<sup>` higher.
                // Allow for a small tolerance if needed, but often `supY < parentY` is enough.
-               if ( supY < parentY - 3 ) {
+               if ( supY < parentY - 1 ) {
                    // This is the expected rendering for a superscript visually above the baseline
                    return SuperscriptInfo.PositionStatus.ABOVE_BASELINE;
                } else {
