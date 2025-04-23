@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Superscript Comparer (Active Tab)</title>
+    <meta charset="UTF-8">
+    <style>
+        /* --- Existing Styles --- */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            width: 750px;
+            min-height: 150px;
+            max-height: 550px;
+            display: flex;
+            flex-direction: column;
+            font-size: 13px;
+            background-color: rgba(255, 255, 255, .96);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 6px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .12);
+            overflow: hidden;
+            position: relative; /* Needed for absolute positioning of the count */
+        }
+        h3 {
+            margin: 0;
+            padding: 12px 18px 5px;
+            font-size: 17px;
+            color: #2c3e50;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        .table-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 18px;
+            border-top: 1px solid #e0e6ed;
+            border-bottom: 1px solid #e0e6ed;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        th, td {
+            border-bottom: 1px solid #e0e6ed;
+            padding: 9px 12px;
+            text-align: left;
+            vertical-align: top;
+            word-wrap: break-word;
+            font-size: 12.5px;
+        }
+        thead th {
+            background-color: rgba(249, 250, 251, .9);
+            font-weight: 600;
+            color: #34495e;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            border-bottom-width: 2px;
+        }
+        tbody tr {
+            cursor: pointer;
+            transition: background-color .15s ease-in-out;
+        }
+        tbody tr:hover {
+            background-color: #f0f3f5;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .col-status { width: 100px; text-align: center; font-weight: 500; }
+        .col-context { width: 35%; }
+        .col-script { width: auto; }
+        .col-missing { width: 80px; text-align: center; }
+        .col-position { width: 110px; text-align: center; font-weight: 500; }
+        .pos-above { color: #27ae60; }
+        .pos-sameline { color: #e74c3c; }
+        .pos-blank { color: #e74c3c; font-style: italic; }
+        .pos-unknown { color: #7f8c8d; }
+        .pos-error { color: #c0392b; font-style: italic; }
+        .status-match {}
+        .status-mismatch { background-color: #fff3cd; }
+        .status-added { background-color: #d1e7dd; }
+        .status-removed { background-color: #f8d7da; text-decoration: line-through; color: #58151c; }
+
+        /* --- Footer Area Styling --- */
+        .footer-area {
+            padding: 10px 18px;
+            background-color: rgba(249, 250, 251, .9);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .footer-info {
+             display: flex;
+             flex-direction: column;
+             align-items: flex-start;
+             gap: 4px;
+        }
+        .action-buttons {
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .action-buttons button {
+            margin-left: 10px;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color .15s ease, border-color .15s ease;
+        }
+        .action-buttons button:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+        }
+        .action-buttons button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+        .footer-status {
+            font-style: italic;
+            color: #7f8c8d;
+            font-size: 11px;
+            text-align: left;
+        }
+        .footer-status.error { color: #c0392b; font-weight: 500; }
+        .footer-status.success { color: #198754; font-weight: 500; font-style: normal; }
+
+        /* --- Scrollbar Styles --- */
+        .table-container::-webkit-scrollbar { width: 7px; }
+        .table-container::-webkit-scrollbar-track { background: transparent; }
+        .table-container::-webkit-scrollbar-thumb { background-color: #ced4da; border-radius: 4px; border: 1px solid rgba(255, 255, 255, .96); }
+        .table-container::-webkit-scrollbar-thumb:hover { background-color: #adb5bd; }
+
+        /* --- Styles for URL, Blank Count, and SupMissing Count --- */
+        .url-display {
+            font-size: 0.85em;
+            color: #555;
+            padding: 0px 18px 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 0;
+        }
+        /* Renamed from .count-display */
+        .blank-supmissing-count-display {
+            font-size: 11px;
+            color: #333;
+            font-weight: 500;
+            text-align: left;
+        }
+        /* NEW: Style for top-right SupMissing count */
+        .supmissing-count-display {
+            position: absolute;
+            top: 12px; /* Align with h3 top padding */
+            right: 18px; /* Align with h3 right padding */
+            font-size: 11px;
+            font-weight: 500;
+            color: #e74c3c; /* Use a distinct color, e.g., red */
+            background-color: rgba(255, 255, 255, 0.8); /* Slight background */
+            padding: 2px 5px;
+            border-radius: 3px;
+            z-index: 2; /* Ensure it's above table header */
+        }
+        .loading-placeholder td {
+             text-align: center;
+             font-style: italic;
+             color: #7f8c8d;
+             padding: 20px 0;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Title -->
+    <h3>Superscript Comparer (Active Tab)</h3>
+    <!-- NEW: SupMissing Count Display Area (Top Right) -->
+    <div id="supMissingCountDisplay" class="supmissing-count-display">Missing: -</div>
+    <!-- URL Display Area -->
+    <div id="activeUrlDisplay" class="url-display" title="Current Tab URL">Loading URL...</div>
+
+    <!-- Table Area -->
+    <div class="table-container">
+        <table>
+            <colgroup>
+                <col class="col-status"/>
+                <col class="col-context"/>
+                <col class="col-script"/>
+                <col class="col-missing"/>
+                <col class="col-position"/>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Preceding Text</th>
+                    <th>Superscript Text</th>
+                    <th>SupMissing?</th>
+                    <th>Position</th>
+                </tr>
+            </thead>
+            <tbody id="resultsBody">
+                <tr class="loading-placeholder">
+                    <td colspan="5">Initializing for active tab...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer Area -->
+    <div class="footer-area">
+        <!-- Info Section (Count & Status) -->
+        <div class="footer-info">
+            <!-- RENAMED: Blank Count Display (now represents blank tags) -->
+            <div id="blankSupMissingCountDisplay" class="blank-supmissing-count-display">SupMissing: -</div>
+            <!-- Status Message -->
+            <div id="footerStatus" class="footer-status">Initializing for active tab...</div>
+        </div>
+        <!-- Action Buttons Section -->
+        <div class="action-buttons">
+            <button id="saveButton" disabled>Save Results</button>
+            <button id="emailButton" disabled>Email Results</button>
+        </div>
+    </div>
+
+    <!-- Link to JS -->
+    <script src="popup.js"></script>
+</body>
+</html>

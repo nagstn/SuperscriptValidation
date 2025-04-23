@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Multi-Page Superscript Scanner",
+  "version": "3.2", // Or your current version
+  "description": "Scans multiple predefined web pages for superscripts, compares, and aggregates results.",
+  "permissions": [
+    "activeTab", // Still needed for popup interaction
+    "scripting", // Needed for executeScript
+    "storage",
+    "alarms",
+    "tabs",
+    "notifications"
+    // Host permission moved below
+  ],
+  "host_permissions": [
+    "*://*.wellsfargo.com/*" // <--- Correct place in MV3
+    // Add other necessary host permissions here
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Compare Superscripts (Active Tab)"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"], // Static content scripts still use matches
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+   "icons": {
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+   }
+}
